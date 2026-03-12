@@ -137,11 +137,11 @@ class Receiver:
             message = message.decode()
             parsed_message = message.split(",")
             x = int(parsed_message[0])
-            x /= 65535
-            if x < 0.5:
-                servo.move(75)
-            else:
-                servo.move(105)
+            x -= 32767 # center at zero
+            delta_theta = x/32767
+            angle = 90 + delta_theta
+            servo.write(angle)
+                
     
     async def listen_and_relay_motors(self, motor_1, motor_2):
         while True:
@@ -165,3 +165,4 @@ class Receiver:
     async def listen_and_relay_blank(self):
         while True:
             message = message = await self.char.notified()
+
