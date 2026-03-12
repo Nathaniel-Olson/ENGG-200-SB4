@@ -5,10 +5,7 @@ import bluetooth
 import uasyncio as asyncio
 from micropython import const
 
-# ==========================
-# BLUETOOTH SETUP
-# ==========================
-
+# Bluetooth Setup
 DEVICE_NAME = "B1_D1"
 GENERIC_UUID = bluetooth.UUID(0x1D10)
 ADV_INTERVAL_US = const(250_000)
@@ -17,34 +14,27 @@ BLE_AGRC = const(384) # Appearance generic remote control
 connected = False
 connection = None
 
-# ==========================
-# SERVICE & OBJECT ASSIGNMENT
-# ==========================
-
+# Service and Object Assignment
 controller_service = aioble.Service(GENERIC_UUID)
 
-left_joystick = hardware.Joystick(28, 0, 0x1D11, controller_service)
-right_joystick = hardware.Joystick(27, 26, 0x1D12, controller_service)
+left_joystick = hardware.Joystick(26, 0, 0x1D11, controller_service)
+right_joystick = hardware.Joystick(28, 27, 0x1D12, controller_service)
 
-button_1 = hardware.Button(18, 0x1D13, controller_service)
-button_2 = hardware.Button(13, 0x1D14, controller_service)
+button_1 = hardware.Button(17, 0x1D13, controller_service)
+button_2 = hardware.Button(14, 0x1D14, controller_service)
 
 led = hardware.LED(PinID = 1)
-led.on()
 
 aioble.register_services(controller_service)
 
-# ==========================
-# ASYNC FUNCTIONS
-# ==========================
-
+# Async Functions
 async def advertise_task():
     global connected, connection
     while True:
         connected = False
         async with await aioble.advertise(ADV_INTERVAL_US, name = DEVICE_NAME, appearance = BLE_AGRC, services = [GENERIC_UUID]) as connection:
             connected = True
-            await connected.disconnected()
+            await connection.disconnected()
 
 async def read_task():
     global connected
@@ -55,10 +45,10 @@ async def read_task():
         button_2.read()
 
         if connected:
-            left_joystick.transmit()
-            right_joystick.transmit()
-            button_1.transmit()
-            button_2.transmit()
+            left_joystick.transmit(connection)
+            right_joystick.transmit(connection)
+            button_1.transmit(connection)
+            button_2.transmit(connection)
         
         await asyncio.sleep_ms(50)
 
@@ -69,16 +59,12 @@ async def led_task():
         toggle = not toggle
         await asyncio.sleep_ms(1000 if connected else 250)
 
-# ==========================
-# MAIN
-# ==========================
-
+# Main
 async def main():
     await asyncio.gather(advertise_task(), read_task(), led_task())
 
 try:
     asyncio.run(main())
-    
 except KeyboardInterrupt:
     led.off()
     print("Program Closed.")

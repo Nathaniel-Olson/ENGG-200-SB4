@@ -2,17 +2,7 @@ import aioble
 import bluetooth
 from machine import ADC, Pin
 
-# ==========================
-# NOTES
-# ==========================
-# for all classes in this script, the .read() method returns
-# None, and instead updates the self.x, self.y, and self.msg
-# attributes inherently, which can be transmitted to the
-# other pico instantly with Joystick.transmit(connection).
-
-# ==========================
-# HARDWARE CLASSES
-# ==========================
+# Hardware Classes
 class Joystick:
     def __init__(self, xPinID: int, yPinID: int, UUID: hex, service):
         
@@ -42,7 +32,7 @@ class Button:
     def __init__(self, PinID: int, UUID: hex, service):
 
         # Pin Assignment
-        self.buttonPin = Pin(PinID, Pin.pygame.display.init(), Pin.PULL_UP)
+        self.buttonPin = Pin(PinID, Pin.IN, Pin.PULL_UP)
 
         # Attributes
         self.value = 0
@@ -54,7 +44,6 @@ class Button:
 
     def read(self):
         self.value = (0 if self.buttonPin.value() else 1)
-        self.msg = f"{self.value}"
     
     def transmit(self, connection):
         self.char.notify(connection, self.msg.encode())
