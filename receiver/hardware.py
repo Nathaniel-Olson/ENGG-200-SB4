@@ -3,54 +3,62 @@ import bluetooth
 from machine import PWM, Pin
 
 class DCMotor:
-    def __init__(self, ePinID, mPinID, direction, frequency_hz = 500, deadzone_u16 = 1000, smoothing_curve = lambda i: i ** 3):
+    def __init__(self, ePinID, mPinID, direction, frequency_hz = 500, deadzone_u16 = 500, smoothing_curve = lambda i: i ** 3):
         # Pin Assignment
         self.ePin = PWM(Pin(ePinID))
         self.mPin = Pin(mPinID, Pin.OUT)
 
         # Attributes
         self.direction = direction
-        self.dz_range = deadzone
+        self.dz_range = deadzone_u16
         
         # note that the smoothing curve must have a range of [0,1] on the domain [0,1]
-        # (polynomials are a good choice here)
         self.smoothing_curve = smoothing_curve
 
         # Other Assignments
-        self.ePin.freq(frequency)
+        self.ePin.freq(frequency_hz)
     
     def write(self, joystick_input):
         # take x and y, centering at 0
         x = joystick_input[0] - 32767
-        y = joystick_input[0] - 32767
+        y = joystick_input[1] - 32767
         
-        # note that due to orientation, a degree correction of pi radians is required
-        theta_r = math.atan(y/x)
+        if abs(x) < self.dz_range:
+            x = 0
         
-        # also, because tan has a period of pi and not 2pi, an additional 2pi correction is required
-        theta = theta_r + math.pi + (0 if y > 0 else math.pi)
+        if abs(y) < self.dz_range:
+            y = 0
         
-        # shifted pi/4 radians, to make logic work.
+        if x == 0:
+            if y == 0:
+                theta = 0
+            elif y < 0:
+                theta = math.pi / 2
+            elif y > 0:
+                theta = 3 * math.pi / 2
+        elif y == 0:
+            if x > 0:
+                theta = 0
+            if x < 0:
+                theta = math.pi
+        else:
+            theta_r = math.atan(y/x)
+            theta = round(theta_r * -1 + (0 if x > 0 else math.pi) + (2 * math.pi if y > 0 and x > 0 else 0), 3)
+        
         if self.direction == "R":
             trig = math.sin(theta - math.pi / 4)
         elif self.direction == "L":
-            trig = math.sin(theta - math.pi / 4)
+            trig = math.cos(theta - math.pi / 4)
         
-        power = abs(int(trig * 65535))
+        power = abs(int(trig * 65535 * math.sqrt((x/32767)**2 + (y/32767)**2)) * math.sqrt(2))
         sign = (0 if trig > 0 else 1)
+    
+        # smoothing curve
+        power = int(self.smoothing_curve(power / 65535) * 65535)
         
-        # account for deadzone
-        if power < self.dz_range:
-            power = 0
-            
-        # check to make sure power is not exceeded
         if power > 65535:
             power = 65535
         
-        # smoothing curve
-        power = self.smoothing_curve(power / 65535) * 65535
-        
-        print(f"{sign=},{power=}")
         self.mPin.value(sign)
         self.ePin.duty_u16(power)
     
@@ -126,6 +134,7 @@ class Receiver:
     async def listen_and_relay_servo(self, servo):
         while True:
             message = await self.char.notified()
+            message = message.decode()
             parsed_message = message.split(",")
             x = int(parsed_message[0])
             x /= 65535
@@ -133,15 +142,12 @@ class Receiver:
                 servo.move(75)
             else:
                 servo.move(105)
-
     
     async def listen_and_relay_motors(self, motor_1, motor_2):
         while True:
             message = await self.char.notified()
             message = message.decode()
-            print(message)
             parsed_message = message.split(",")
-            print(parsed_message)
             x = int(parsed_message[0])
             y = int(parsed_message[1])
             motor_1.write((x,y))

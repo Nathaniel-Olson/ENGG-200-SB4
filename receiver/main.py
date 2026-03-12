@@ -3,40 +3,28 @@ import aioble
 import bluetooth
 import uasyncio as asyncio
 
-# ==========================
-# BLUETOOTH SETUP
-# ==========================
-
+# Bluetooth Setup
 REMOTE_NAME = "B1_D1"
 GENERIC_UUID = bluetooth.UUID(0x1D10)
-
 connected = False
 
-# ==========================
-# RECEIVER SETUP
-# ==========================
-
+# Receiver Setup
 left_joystick = hardware.Receiver(0x1D11)
 right_joystick = hardware.Receiver(0x1D12)
 button_1 = hardware.Receiver(0x1D13)
 button_2 = hardware.Receiver(0x1D14)
 
-# ==========================
-# PIN ASSIGNMENT
-# ==========================
-
+# Pin Assignment
 pico_led = hardware.LED("LED")
 green_led = hardware.LED(10)
+red_led = hardware.LED(6)
+
 left_motor = hardware.DCMotor(0,1,"L")
 right_motor = hardware.DCMotor(3,4,"R")
 servo = hardware.Servo(27)
 pico_led.on()
-green_led.on()
 
-# ==========================
-# ASYNC FUNCTIONS
-# ==========================
-
+# Async Functions
 async def find_remote():
     async with aioble.scan(5000, interval_us = 30000, window_us = 30000, active = True
                            ) as scanner:
@@ -62,6 +50,7 @@ async def connect_task():
         async with connection:
             connected = True
             pico_led.on()
+            
             service = await connection.service(GENERIC_UUID)
             
             await left_joystick.find_char_and_subscribe(service)
@@ -81,6 +70,7 @@ async def led_task():
     toggle = True
     while True:
         pico_led.write(toggle)
+        
         toggle = not toggle
         await asyncio.sleep_ms(1000 if connected else 250)
 
@@ -89,6 +79,12 @@ async def main():
 
 try:
     asyncio.run(main())
+    
 except KeyboardInterrupt:
     pico_led.off()
     print("progam closed.")
+    
+except Exception:
+    pico_led.off()
+    green_led.off()
+    red_led.on()
