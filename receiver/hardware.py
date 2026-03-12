@@ -43,16 +43,20 @@ class DCMotor:
                 theta = math.pi
         else:
             theta_r = math.atan(y/x)
-            theta = round(theta_r * -1 + (0 if x > 0 else math.pi) + (2 * math.pi if y > 0 and x > 0 else 0), 3)
+            theta = theta_r * -1 + (0 if x > 0 else math.pi) + (2 * math.pi if y > 0 and x > 0 else 0)
         
         if self.direction == "R":
             trig = math.sin(theta - math.pi / 4)
         elif self.direction == "L":
             trig = math.cos(theta - math.pi / 4)
+            
+
         
         power = abs(int(trig * 65535 * math.sqrt((x/32767)**2 + (y/32767)**2)) * math.sqrt(2))
         sign = (0 if trig > 0 else 1)
     
+        print(f"{self.direction} {theta=}, {power=}")
+        
         # smoothing curve
         power = int(self.smoothing_curve(power / 65535) * 65535)
         
@@ -75,6 +79,7 @@ class Servo:
 
     def __init__(self, pin):
         self.__initialise(pin)
+        print("servo init")
 
     def update_settings(self, servo_pwm_freq, min_u16_duty, max_u16_duty, min_angle, max_angle, pin):
         self.__servo_pwm_freq = servo_pwm_freq
@@ -138,9 +143,9 @@ class Receiver:
             parsed_message = message.split(",")
             x = int(parsed_message[0])
             x -= 32767 # center at zero
-            delta_theta = x/32767
+            delta_theta = 35 * x/32767
             angle = 90 + delta_theta
-            servo.write(angle)
+            servo.move(angle)
                 
     
     async def listen_and_relay_motors(self, motor_1, motor_2):
@@ -164,5 +169,5 @@ class Receiver:
     
     async def listen_and_relay_blank(self):
         while True:
-            message = message = await self.char.notified()
+            message = await self.char.notified()
 

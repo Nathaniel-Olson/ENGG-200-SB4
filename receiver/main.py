@@ -67,7 +67,6 @@ async def connect_task():
                     )
                 
 async def led_task():
-    print("led task start")
     toggle = True
     while True:
         pico_led.write(toggle)
@@ -84,8 +83,3 @@ try:
 except KeyboardInterrupt:
     pico_led.off()
     print("progam closed.")
-    
-except Exception:
-    pico_led.off()
-    green_led.off()
-    red_led.on()
