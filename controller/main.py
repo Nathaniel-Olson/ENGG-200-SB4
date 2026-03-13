@@ -65,7 +65,7 @@ async def main():
 
 try:
     asyncio.run(main())
+    
 except KeyboardInterrupt:
     led.off()
     print("Program Closed.")
-
