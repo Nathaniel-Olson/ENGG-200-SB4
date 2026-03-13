@@ -3,7 +3,7 @@ import bluetooth
 from machine import PWM, Pin
 
 class DCMotor:
-    def __init__(self, ePinID, mPinID, direction, frequency_hz = 500, deadzone_u16 = 250, smoothing_curve = lambda i: i ** 3):
+    def __init__(self, ePinID, mPinID, direction, frequency_hz = 500, deadzone_u16 = 500, smoothing_curve = lambda i: i ** 3):
         # Pin Assignment
         self.ePin = PWM(Pin(ePinID))
         self.mPin = Pin(mPinID, Pin.OUT)
@@ -27,13 +27,13 @@ class DCMotor:
         x = joystick_input[0] - 32767
         y = joystick_input[1] - 32767
         
-        max_change_u16 = 250
+        max_change_u16 = 3000
         
         if abs(x - self.lastx) > max_change_u16:
             x = self.lastx + (max_change_u16 if x > self.lastx else -1*max_change_u16)
             
-        if abs(y-self.lasty) > max_change_u16:
-            y = self.lasty + (max_change_u16 if y < self.lasty else -1*max_change_u16)
+        if abs(y - self.lasty) > max_change_u16:
+            y = self.lasty + (max_change_u16 if y > self.lasty else -1*max_change_u16)
             
         self.lastx = x
         self.lasty = y
@@ -76,7 +76,7 @@ class DCMotor:
         power = int(self.smoothing_curve(power / 65535) * 65535)
         
         if power > (65535 / self.power_damping_factor):
-            power = (65535 / self.power_damping_factor)
+            power = int((65535 / self.power_damping_factor))
         
         self.mPin.value(sign)
         self.ePin.duty_u16(power)
@@ -95,7 +95,7 @@ class Servo:
         
         self.min_duty = min_u16_duty
         self.max_duty = max_u16_duty
-        self.min_angle = min_angle,
+        self.min_angle = min_angle
         self.max_angle = max_angle
         self.current_angle = current_angle
         
@@ -112,7 +112,7 @@ class Servo:
         self.current_angle = angle
         
         # convert angle to uint16
-        duty_u16 = int((angle - self.min_angle) * self.__angle_conversion_factor) + self.__min_u16_duty
+        duty_u16 = int((angle - self.min_angle) * self.angle_conversion_factor) + self.min_duty
         self.motor.duty_u16(duty_u16)
 
 class LED:
@@ -175,4 +175,3 @@ class Receiver:
     async def listen_and_relay_blank(self):
         while True:
             message = await self.char.notified()
-
