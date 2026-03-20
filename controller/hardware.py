@@ -23,9 +23,11 @@ class Joystick:
         self.x = self.xPin.read_u16()
         self.y = self.yPin.read_u16()
         self.msg = f"{self.x},{self.y}"
+        print(self.msg)
     
     def transmit(self, connection):
         self.char.notify(connection, self.msg.encode())
+        print("notifying Joystick")
 
 
 class Button:
@@ -53,13 +55,11 @@ class LED:
         self.ledPin = Pin(PinID, Pin.OUT)
         self.value = 0 # off
     
-    def toggle(self):
-        if self.value == 1:
+    def write(self, value: bool):
+        if value == 0:
             self.ledPin.off()
-            self.value = 0
-        elif self.value == 0:
+        if value == 1:
             self.ledPin.on()
-            self.value = 1
 
     def on(self):
         self.ledPin.on()

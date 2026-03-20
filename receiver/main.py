@@ -16,8 +16,8 @@ button_1 = hardware.Receiver(0x1D13)
 button_2 = hardware.Receiver(0x1D14)
 
 # Pin Assignment
-green_led = hardware.LED(10)
-yellow_led = hardware.LED(6)
+green_led = hardware.LED(20)
+yellow_led = hardware.LED(11)
 
 left_motor = hardware.DCMotor(0,1,"L")
 right_motor = hardware.DCMotor(3,4,"R")
@@ -95,3 +95,4 @@ except KeyboardInterrupt:
     green_led.off()
     yellow_led.off()
     print("progam closed.")
+

@@ -3,7 +3,7 @@ import bluetooth
 from machine import PWM, Pin
 
 class DCMotor:
-    def __init__(self, ePinID, mPinID, direction, frequency_hz = 500, deadzone_u16 = 500, smoothing_curve = lambda i: i ** 3):
+    def __init__(self, ePinID, mPinID, direction, frequency_hz = 500, deadzone_u16 = 500, smoothing_curve = lambda i: i ** 2):
         # Pin Assignment
         self.ePin = PWM(Pin(ePinID))
         self.mPin = Pin(mPinID, Pin.OUT)
@@ -11,7 +11,7 @@ class DCMotor:
         # Attributes
         self.direction = direction
         self.dz_range = deadzone_u16
-        self.power_damping_factor = 2
+        self.power_damping_factor = 1
         
         # note that the smoothing curve must have a range of [0,1] on the domain [0,1]
         self.smoothing_curve = smoothing_curve
@@ -175,3 +175,4 @@ class Receiver:
     async def listen_and_relay_blank(self):
         while True:
             message = await self.char.notified()
+
