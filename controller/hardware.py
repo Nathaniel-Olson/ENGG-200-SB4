@@ -53,11 +53,13 @@ class LED:
         self.ledPin = Pin(PinID, Pin.OUT)
         self.value = 0 # off
     
-    def write(self, value: bool):
-        if value == 0:
+    def toggle(self):
+        if self.value == 1:
             self.ledPin.off()
-        if value == 1:
+            self.value = 0
+        elif self.value == 0:
             self.ledPin.on()
+            self.value = 1
 
     def on(self):
         self.ledPin.on()

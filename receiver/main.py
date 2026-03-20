@@ -1,4 +1,5 @@
 import hardware
+import gc
 import aioble
 import bluetooth
 import uasyncio as asyncio
@@ -15,15 +16,14 @@ button_1 = hardware.Receiver(0x1D13)
 button_2 = hardware.Receiver(0x1D14)
 
 # Pin Assignment
-pico_led = hardware.LED("LED")
 green_led = hardware.LED(10)
-red_led = hardware.LED(6)
+yellow_led = hardware.LED(6)
 
 left_motor = hardware.DCMotor(0,1,"L")
 right_motor = hardware.DCMotor(3,4,"R")
 servo = hardware.Servo(27)
 
-pico_led.on()
+gc.collect()
 
 # Async Functions
 async def find_remote():
@@ -50,7 +50,6 @@ async def connect_task():
 
         async with connection:
             connected = True
-            pico_led.on()
             
             service = await connection.service(GENERIC_UUID)
             
@@ -67,19 +66,32 @@ async def connect_task():
                     )
                 
 async def led_task():
+    green_led.off()
+    yellow_led.off()
+
     toggle = True
     while True:
-        pico_led.write(toggle)
-        
-        toggle = not toggle
-        await asyncio.sleep_ms(1000 if connected else 250)
+        if not connected:
+            yellow_led.write(toggle)
+            toggle = not toggle
+            await asyncio.sleep_ms(250)
+        if connected:
+            yellow_led.off()
+            green_led.on()
+            await asyncio.sleep_ms(1000)
+
+async def gc_task():
+    while True:
+        gc.collect()
+        await asyncio.sleep_ms(5000)
 
 async def main():
-    await asyncio.gather(connect_task(), led_task())
+    await asyncio.gather(connect_task(), led_task(), gc_task())
 
 try:
     asyncio.run(main())
     
 except KeyboardInterrupt:
-    pico_led.off()
+    green_led.off()
+    yellow_led.off()
     print("progam closed.")

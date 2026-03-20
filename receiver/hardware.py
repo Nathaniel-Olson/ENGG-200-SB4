@@ -11,7 +11,7 @@ class DCMotor:
         # Attributes
         self.direction = direction
         self.dz_range = deadzone_u16
-        self.power_damping_factor = 3
+        self.power_damping_factor = 2
         
         # note that the smoothing curve must have a range of [0,1] on the domain [0,1]
         self.smoothing_curve = smoothing_curve
@@ -27,7 +27,7 @@ class DCMotor:
         x = joystick_input[0] - 32767
         y = joystick_input[1] - 32767
         
-        max_change_u16 = 3000
+        max_change_u16 = 6000
         
         if abs(x - self.lastx) > max_change_u16:
             x = self.lastx + (max_change_u16 if x > self.lastx else -1*max_change_u16)
